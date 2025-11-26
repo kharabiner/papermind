@@ -66,13 +66,40 @@ const MindMapCanvas = () => {
     }, [mindMapData, nodes]); // Warning: nodes changes often on drag. Debouncing might be needed if performance is bad.
     // For now, let's try. If it's too slow, we can optimize.
 
+    const handleDeletePaper = useCallback((id: string) => {
+        setMindMapData(prev => {
+            const newPapers = prev.papers.filter(p => p.id !== id);
+            const newCitations = prev.citations.filter(c => c.sourcePaperId !== id && c.targetPaperId !== id);
+            return {
+                ...prev,
+                papers: newPapers,
+                citations: newCitations
+            };
+        });
+        setSelectedNodeId(null);
+    }, []);
+
     // Update Layout when data changes
     useEffect(() => {
-        if (mindMapData.papers.length === 0) return;
+        if (mindMapData.papers.length === 0) {
+            setNodes([]);
+            setEdges([]);
+            return;
+        }
         const layout = calculateLayout(mindMapData);
-        setNodes(layout.nodes);
+
+        // Inject onDelete handler into node data
+        const nodesWithHandler = layout.nodes.map(node => ({
+            ...node,
+            data: {
+                ...node.data,
+                onDelete: handleDeletePaper
+            }
+        }));
+
+        setNodes(nodesWithHandler);
         setEdges(layout.edges);
-    }, [mindMapData, setNodes, setEdges]);
+    }, [mindMapData, setNodes, setEdges, handleDeletePaper]);
 
     // Update edge styles when selection changes
     useEffect(() => {

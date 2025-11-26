@@ -1,20 +1,39 @@
+
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Paper } from '@/types';
-import { FileText, Calendar, User } from 'lucide-react';
+import { FileText, Calendar, User, Trash2 } from 'lucide-react';
 
 // We use NodeProps without generic to satisfy React Flow's nodeTypes requirement
 // and cast data inside the component
-const PaperNode = ({ data }: NodeProps) => {
+const PaperNode = ({ id, data }: NodeProps) => {
     const paper = data as unknown as Paper;
+    const onDelete = data.onDelete as (id: string) => void;
+
     return (
-        <div className="w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg border-2 border-slate-200 dark:border-slate-700 hover:border-blue-500 transition-colors overflow-hidden">
+        <div className="group w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg border-2 border-slate-200 dark:border-slate-700 hover:border-blue-500 transition-colors overflow-hidden relative">
             {/* Handles for connections */}
             <Handle type="target" position={Position.Top} className="!bg-slate-400" />
             <Handle type="source" position={Position.Bottom} className="!bg-slate-400" />
 
+            {/* Delete Button (Visible on Hover) */}
+            {onDelete && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation(); // Prevent selecting the node
+                        if (confirm('Delete this paper?')) {
+                            onDelete(id);
+                        }
+                    }}
+                    className="absolute top-2 right-2 p-1.5 bg-white dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full opacity-0 group-hover:opacity-100 transition-all z-10 shadow-sm border border-slate-200 dark:border-slate-700"
+                    title="Delete Paper"
+                >
+                    <Trash2 className="w-3.5 h-3.5" />
+                </button>
+            )}
+
             {/* Header / Title */}
-            <div className="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700">
+            <div className="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 pr-8">
                 <div className="flex items-start gap-2">
                     <FileText className="w-4 h-4 text-blue-500 mt-1 shrink-0" />
                     <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-tight line-clamp-2">
@@ -45,3 +64,5 @@ const PaperNode = ({ data }: NodeProps) => {
 };
 
 export default memo(PaperNode);
+
+
