@@ -382,23 +382,22 @@ const MindMapCanvas = () => {
                 <Panel position="top-right" className="bg-white dark:bg-slate-900 p-2 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2">
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"
+                        className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                        title="Add Paper"
                     >
-                        <Plus className="w-4 h-4" />
-                        Add Paper
+                        <Plus className="w-5 h-5" />
                     </button>
                     <div className="w-px bg-slate-200 dark:bg-slate-700 mx-1" />
-                    <label className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium cursor-pointer transition-colors">
-                        <Upload className="w-4 h-4" />
-                        Import
+                    <label className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md cursor-pointer transition-colors" title="Import JSON">
+                        <Upload className="w-5 h-5" />
                         <input type="file" accept=".json" onChange={handleImport} className="hidden" />
                     </label>
                     <button
                         onClick={handleExport}
-                        className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium transition-colors"
+                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md transition-colors"
+                        title="Export JSON"
                     >
-                        <Download className="w-4 h-4" />
-                        Export
+                        <Download className="w-5 h-5" />
                     </button>
                     <div className="w-px bg-slate-200 dark:bg-slate-700 mx-1" />
                     <button
@@ -408,9 +407,10 @@ const MindMapCanvas = () => {
                                 window.location.reload();
                             }
                         }}
-                        className="flex items-center gap-2 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md text-sm font-medium transition-colors"
+                        className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md font-bold transition-colors w-9 h-9 flex items-center justify-center"
+                        title="Reset All Data"
                     >
-                        Reset
+                        R
                     </button>
                 </Panel>
             </ReactFlow>
