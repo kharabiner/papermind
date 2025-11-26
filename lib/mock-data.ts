@@ -13,6 +13,7 @@ export function generateMockData(): MindMapData {
             topic: 'Artificial Intelligence',
             categories: ['Artificial Intelligence', 'Deep Learning'],
             abstract: 'The Transformer architecture.',
+            url: 'https://arxiv.org/abs/1706.03762',
         },
         {
             id: 'p2',

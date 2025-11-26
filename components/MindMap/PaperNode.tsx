@@ -58,8 +58,21 @@ const PaperNode = ({ data, id }: NodeProps<Node<PaperNodeData>>) => {
             {/* Header / Title */}
             <div className="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 pr-8">
                 <div className="flex items-start gap-2">
-                    <FileText className="w-4 h-4 text-blue-500 mt-1 shrink-0" />
-                    <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-tight line-clamp-2">
+                    {paper.url ? (
+                        <a
+                            href={paper.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:text-blue-700 transition-colors mt-0.5 shrink-0"
+                            title="Open Paper URL"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <FileText className="w-4 h-4" />
+                        </a>
+                    ) : (
+                        <FileText className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                    )}
+                    <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100 leading-tight line-clamp-2">
                         {paper.title}
                     </h3>
                 </div>
