@@ -27,6 +27,7 @@ export interface MindMapData {
   papers: Paper[];
   citations: Citation[];
   topics: Topic[];
+  categoryPositions?: Record<string, { x: number; y: number }>;
 }
 
 export type AppNode = Node<Paper & Record<string, unknown>, 'paper'>;

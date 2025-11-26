@@ -77,7 +77,18 @@ const MindMapCanvas = () => {
                 return node ? { ...paper, position: node.position } : paper;
             });
 
-            localStorage.setItem('PAPERMIND_DATA', JSON.stringify({ ...mindMapData, papers: updatedPapers }));
+            const categoryPositions: Record<string, { x: number; y: number }> = {};
+            nodes.forEach(node => {
+                if (node.type === 'category') {
+                    categoryPositions[(node.data.label as string)] = node.position;
+                }
+            });
+
+            localStorage.setItem('PAPERMIND_DATA', JSON.stringify({
+                ...mindMapData,
+                papers: updatedPapers,
+                categoryPositions
+            }));
         }
     }, [mindMapData, nodes]); // Warning: nodes changes often on drag. Debouncing might be needed if performance is bad.
     // For now, let's try. If it's too slow, we can optimize.
@@ -393,7 +404,14 @@ const MindMapCanvas = () => {
             return paper;
         });
 
-        const dataToSave = { ...mindMapData, papers: updatedPapers };
+        const categoryPositions: Record<string, { x: number; y: number }> = {};
+        nodes.forEach(node => {
+            if (node.type === 'category') {
+                categoryPositions[(node.data.label as string)] = node.position;
+            }
+        });
+
+        const dataToSave = { ...mindMapData, papers: updatedPapers, categoryPositions };
 
         const dataStr = JSON.stringify(dataToSave, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });

@@ -121,10 +121,13 @@ export const calculateLayout = (data: MindMapData) => {
             categoryY = categoryStartY;
         }
 
+        const savedPos = data.categoryPositions?.[category];
+        const categoryX = savedPos ? savedPos.x : 75;
+
         nodes.push({
             id: `cat-${category}`,
             type: 'category',
-            position: { x: 75, y: categoryY },
+            position: { x: categoryX, y: categoryY },
             data: { label: category },
             draggable: true,
             selectable: false,
