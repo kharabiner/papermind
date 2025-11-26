@@ -149,7 +149,7 @@ const MindMapCanvas = () => {
         const refs: Record<string, number> = {};
         initializedNodes.forEach(n => {
             if (n.type === 'category') {
-                refs[n.data.label as string] = n.position.y;
+                refs[((n.data as unknown) as { label: string }).label] = n.position.y;
             }
         });
         categoryYRefs.current = refs;
