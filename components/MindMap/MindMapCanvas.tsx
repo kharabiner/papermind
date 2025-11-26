@@ -26,9 +26,45 @@ const MindMapCanvas = () => {
 
     // Initial Data Load
     useEffect(() => {
-        const data = generateMockData();
-        setMindMapData(data);
+        const savedData = localStorage.getItem('PAPERMIND_DATA');
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                setMindMapData(parsed);
+            } catch (e) {
+                console.error('Failed to load data from local storage', e);
+                setMindMapData(generateMockData());
+            }
+        } else {
+            setMindMapData(generateMockData());
+        }
     }, []);
+
+    // Auto-save to LocalStorage
+    useEffect(() => {
+        if (mindMapData.papers.length > 0) {
+            // We also need to save current node positions if they differ from initial layout
+            // But mindMapData might not have the latest positions if we only update it on export.
+            // Let's sync positions to mindMapData before saving?
+            // Actually, for auto-save to work perfectly with drag, we should update mindMapData on node drag end.
+            // For now, let's just save the structure. Position persistence on drag might be too heavy if we update state on every drag.
+            // Let's rely on the user explicitly exporting for perfect position saving, OR
+            // we can update mindMapData periodically or on node drag stop.
+
+            // Simple approach: Save what we have. If user wants to save positions, they are saved when we merge them back.
+            // Wait, if we load from LS, we want positions.
+            // So we should merge positions into mindMapData whenever nodes change? No, that causes loop.
+
+            // Better: When saving to LS, merge current node positions.
+            const updatedPapers = mindMapData.papers.map(paper => {
+                const node = nodes.find(n => n.id === paper.id);
+                return node ? { ...paper, position: node.position } : paper;
+            });
+
+            localStorage.setItem('PAPERMIND_DATA', JSON.stringify({ ...mindMapData, papers: updatedPapers }));
+        }
+    }, [mindMapData, nodes]); // Warning: nodes changes often on drag. Debouncing might be needed if performance is bad.
+    // For now, let's try. If it's too slow, we can optimize.
 
     // Update Layout when data changes
     useEffect(() => {
@@ -189,6 +225,18 @@ const MindMapCanvas = () => {
                     >
                         <Download className="w-4 h-4" />
                         Export
+                    </button>
+                    <div className="w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+                    <button
+                        onClick={() => {
+                            if (confirm('Are you sure you want to reset all data? This cannot be undone.')) {
+                                localStorage.removeItem('PAPERMIND_DATA');
+                                window.location.reload();
+                            }
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md text-sm font-medium transition-colors"
+                    >
+                        Reset
                     </button>
                 </Panel>
             </ReactFlow>
