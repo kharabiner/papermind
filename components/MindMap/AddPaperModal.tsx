@@ -31,7 +31,7 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
             authors: authors.split(',').map(a => a.trim()).filter(a => a),
             year: Number(year),
             topic: finalTopic,
-            category: category,
+            categories: category.split(',').map(c => c.trim()).filter(c => c),
         });
 
         // Reset form
@@ -87,7 +87,7 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
                             className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                            placeholder="e.g. AI, Systems, Theory"
+                            placeholder="e.g. AI, Systems (First one will be the primary row)"
                         />
                     </div>
 

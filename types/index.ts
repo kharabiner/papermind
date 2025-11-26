@@ -8,7 +8,7 @@ export interface Paper {
   authors: string[];
   year: number;
   topic: Topic;
-  category: string; // e.g. "AI", "Systems"
+  categories: string[]; // e.g. ["AI", "Systems"] - First one is primary for layout
   abstract?: string;
   url?: string;
   position?: { x: number; y: number };

@@ -18,7 +18,7 @@ export const calculateLayout = (data: MindMapData) => {
     const categoryGroups = new Map<string, Map<string, Paper[]>>();
 
     data.papers.forEach(paper => {
-        const category = paper.category || 'Uncategorized';
+        const category = (paper.categories && paper.categories.length > 0) ? paper.categories[0] : 'Uncategorized';
         if (!categoryGroups.has(category)) {
             categoryGroups.set(category, new Map());
         }

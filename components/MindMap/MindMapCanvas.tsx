@@ -176,8 +176,8 @@ const MindMapCanvas = () => {
                 return { ...baseNode, data: { ...baseNode.data, isSelected: true, dimmed: false } };
             }
 
-            // If it's a paper belonging to the selected category
-            if (isPaperNode && node.data.category === selectedCategory) {
+            // If it's a paper belonging to the selected category (Primary or Secondary)
+            if (isPaperNode && node.data.categories && (node.data.categories as string[]).includes(selectedCategory)) {
                 return { ...baseNode, data: { ...baseNode.data, dimmed: false } };
             }
 
@@ -243,8 +243,14 @@ const MindMapCanvas = () => {
                             return node;
                         }
 
-                        // Move papers in this category
-                        if (n.type === 'paper' && n.data.category === categoryLabel) {
+                        // Move papers in this category (Primary or Secondary)
+                        // Note: If a paper belongs to multiple categories, dragging ANY of them will move the paper.
+                        // This might be desired or not. If we only want PRIMARY category to move it, check categories[0].
+                        // User said: "One paper, one card". If I drag "AI" and paper is "AI, Neuro", it should move.
+                        // If I drag "Neuro" and paper is "AI, Neuro" (but visually in AI row), should it move?
+                        // If it moves, it might detach from its visual row.
+                        // So we should ONLY move it if the dragged category is its PRIMARY category (visual row).
+                        if (n.type === 'paper' && (n.data.categories as string[])?.[0] === categoryLabel) {
                             return {
                                 ...n,
                                 position: {

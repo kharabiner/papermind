@@ -11,6 +11,8 @@ export function generateMockData(): MindMapData {
     const startYear = 2015;
     const endYear = 2024;
 
+    const allPossibleCategories = ['Artificial Intelligence', 'Neuroscience', 'Robotics', 'Software Engineering'];
+
     for (const topic of TOPICS) {
         for (let year = startYear; year <= endYear; year++) {
             // Generate 1-3 papers per topic per year
@@ -21,10 +23,10 @@ export function generateMockData(): MindMapData {
                     id: `p-${paperIdCounter++}`,
                     title: `${topic} Research ${year} - Vol ${i + 1}`,
                     authors: [`Author ${String.fromCharCode(65 + i)}`, `Author ${String.fromCharCode(66 + i)}`],
-                    year: year,
+                    year: 2013 + Math.floor(Math.random() * 12), // Random year between 2013 and 2024
                     topic: topic,
-                    category: topic, // Assign topic as category for generated papers
-                    abstract: `This is a simulated abstract for a paper about ${topic} published in ${year}.`,
+                    categories: [allPossibleCategories[Math.floor(Math.random() * allPossibleCategories.length)]], // Assign a random category as an array
+                    abstract: 'This is a mock abstract for a randomly generated paper.', // Simplified abstract
                 });
             }
         }
@@ -37,8 +39,8 @@ export function generateMockData(): MindMapData {
             title: 'Attention Is All You Need',
             authors: ['Vaswani et al.'],
             year: 2017,
-            topic: 'Artificial Intelligence', // Changed from 'LLM' to match TOPICS
-            category: 'Artificial Intelligence',
+            topic: 'Artificial Intelligence',
+            categories: ['Artificial Intelligence', 'Deep Learning'],
             abstract: 'The Transformer architecture.',
         },
         {
@@ -46,8 +48,8 @@ export function generateMockData(): MindMapData {
             title: 'BERT: Pre-training of Deep Bidirectional Transformers',
             authors: ['Devlin et al.'],
             year: 2018,
-            topic: 'Artificial Intelligence', // Changed from 'LLM' to match TOPICS
-            category: 'Artificial Intelligence',
+            topic: 'Artificial Intelligence',
+            categories: ['Artificial Intelligence', 'NLP'],
             abstract: 'Bidirectional training of Transformer.',
         },
         {
@@ -55,8 +57,8 @@ export function generateMockData(): MindMapData {
             title: 'GPT-3: Language Models are Few-Shot Learners',
             authors: ['Brown et al.'],
             year: 2020,
-            topic: 'Artificial Intelligence', // Changed from 'LLM' to match TOPICS
-            category: 'Artificial Intelligence',
+            topic: 'Artificial Intelligence',
+            categories: ['Artificial Intelligence', 'NLP'],
             abstract: 'Scaling up language models.',
         },
         {
@@ -64,8 +66,8 @@ export function generateMockData(): MindMapData {
             title: 'ResNet: Deep Residual Learning for Image Recognition',
             authors: ['He et al.'],
             year: 2016,
-            topic: 'Artificial Intelligence', // Changed from 'Computer Vision' to match TOPICS
-            category: 'Artificial Intelligence',
+            topic: 'Artificial Intelligence',
+            categories: ['Artificial Intelligence', 'Computer Vision'],
             abstract: 'Residual learning framework.',
         },
         {
@@ -73,8 +75,8 @@ export function generateMockData(): MindMapData {
             title: 'ViT: An Image is Worth 16x16 Words',
             authors: ['Dosovitskiy et al.'],
             year: 2020,
-            topic: 'Artificial Intelligence', // Changed from 'Computer Vision' to match TOPICS
-            category: 'Artificial Intelligence',
+            topic: 'Artificial Intelligence',
+            categories: ['Artificial Intelligence', 'Computer Vision'],
             abstract: 'Transformers for image recognition.',
         },
         {
@@ -82,8 +84,8 @@ export function generateMockData(): MindMapData {
             title: 'React: A JavaScript Library for Building User Interfaces',
             authors: ['Jordan Walke'],
             year: 2013,
-            topic: 'Software Engineering', // Changed from 'Web Development' to a new topic
-            category: 'Software Engineering',
+            topic: 'Software Engineering',
+            categories: ['Software Engineering', 'Web Development'],
             abstract: 'Component-based UI library.',
         },
         {
@@ -91,8 +93,8 @@ export function generateMockData(): MindMapData {
             title: 'Next.js: The React Framework',
             authors: ['Vercel'],
             year: 2016,
-            topic: 'Software Engineering', // Changed from 'Web Development' to a new topic
-            category: 'Software Engineering',
+            topic: 'Software Engineering',
+            categories: ['Software Engineering', 'Web Development'],
             abstract: 'Server-side rendering for React.',
         },
     );
