@@ -79,6 +79,19 @@ const MindMapCanvas = () => {
         setSelectedNodeId(null);
     }, []);
 
+    const handleResetPosition = useCallback((id: string) => {
+        setMindMapData(prev => {
+            const updatedPapers = prev.papers.map(p => {
+                if (p.id === id) {
+                    const { position, ...rest } = p;
+                    return rest;
+                }
+                return p;
+            });
+            return { ...prev, papers: updatedPapers };
+        });
+    }, []);
+
     // Update Layout when data changes
     useEffect(() => {
         if (mindMapData.papers.length === 0) {
@@ -88,18 +101,19 @@ const MindMapCanvas = () => {
         }
         const layout = calculateLayout(mindMapData);
 
-        // Inject onDelete handler into node data
+        // Inject handlers into node data
         const nodesWithHandler = layout.nodes.map(node => ({
             ...node,
             data: {
                 ...node.data,
-                onDelete: handleDeletePaper
+                onDelete: handleDeletePaper,
+                onResetPosition: handleResetPosition
             }
         }));
 
         setNodes(nodesWithHandler);
         setEdges(layout.edges);
-    }, [mindMapData, setNodes, setEdges, handleDeletePaper]);
+    }, [mindMapData, setNodes, setEdges, handleDeletePaper, handleResetPosition]);
 
     // Update edge styles when selection changes
     useEffect(() => {

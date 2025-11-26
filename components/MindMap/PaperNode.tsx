@@ -2,7 +2,7 @@
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Paper } from '@/types';
-import { FileText, Calendar, User, Trash2 } from 'lucide-react';
+import { FileText, Calendar, User, Trash2, RefreshCw } from 'lucide-react';
 
 // We use NodeProps without generic to satisfy React Flow's nodeTypes requirement
 // and cast data inside the component
@@ -16,21 +16,35 @@ const PaperNode = ({ id, data }: NodeProps) => {
             <Handle type="target" position={Position.Top} className="!bg-slate-400" />
             <Handle type="source" position={Position.Bottom} className="!bg-slate-400" />
 
-            {/* Delete Button (Visible on Hover) */}
-            {onDelete && (
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation(); // Prevent selecting the node
-                        if (confirm('Delete this paper?')) {
-                            onDelete(id);
-                        }
-                    }}
-                    className="absolute top-2 right-2 p-1.5 bg-white dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full opacity-0 group-hover:opacity-100 transition-all z-10 shadow-sm border border-slate-200 dark:border-slate-700"
-                    title="Delete Paper"
-                >
-                    <Trash2 className="w-3.5 h-3.5" />
-                </button>
-            )}
+            {/* Action Buttons (Visible on Hover) */}
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all z-10">
+                {data.onResetPosition && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            (data.onResetPosition as (id: string) => void)(id);
+                        }}
+                        className="p-1.5 bg-white dark:bg-slate-800 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full shadow-sm border border-slate-200 dark:border-slate-700"
+                        title="Reset Position"
+                    >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                    </button>
+                )}
+                {onDelete && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('Delete this paper?')) {
+                                onDelete(id);
+                            }
+                        }}
+                        className="p-1.5 bg-white dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full shadow-sm border border-slate-200 dark:border-slate-700"
+                        title="Delete Paper"
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                )}
+            </div>
 
             {/* Header / Title */}
             <div className="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 pr-8">
