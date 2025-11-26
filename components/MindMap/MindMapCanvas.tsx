@@ -6,6 +6,7 @@ import '@xyflow/react/dist/style.css';
 import { Download, Upload, Plus, FileJson } from 'lucide-react';
 
 import PaperNode from './PaperNode';
+import CategoryNode from './CategoryNode';
 import AddPaperModal from './AddPaperModal';
 import { generateMockData } from '@/lib/mock-data';
 import { calculateLayout } from '@/lib/layout';
@@ -13,6 +14,7 @@ import { MindMapData, Paper, Topic } from '@/types';
 
 const nodeTypes = {
     paper: PaperNode,
+    category: CategoryNode,
 };
 
 const MindMapCanvas = () => {

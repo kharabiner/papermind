@@ -8,6 +8,7 @@ export interface Paper {
   authors: string[];
   year: number;
   topic: Topic;
+  category: string; // e.g. "AI", "Systems"
   abstract?: string;
   url?: string;
   position?: { x: number; y: number };

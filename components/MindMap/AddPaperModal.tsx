@@ -13,6 +13,7 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
     const [title, setTitle] = useState('');
     const [authors, setAuthors] = useState('');
     const [year, setYear] = useState(new Date().getFullYear());
+    const [category, setCategory] = useState('');
     const [topic, setTopic] = useState('');
     const [newTopic, setNewTopic] = useState('');
     const [isNewTopic, setIsNewTopic] = useState(false);
@@ -23,19 +24,21 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
         e.preventDefault();
         const finalTopic = isNewTopic ? newTopic : topic;
 
-        if (!title || !finalTopic) return;
+        if (!title || !finalTopic || !category) return;
 
         onAdd({
             title,
             authors: authors.split(',').map(a => a.trim()).filter(a => a),
             year: Number(year),
             topic: finalTopic,
+            category: category,
         });
 
         // Reset form
         setTitle('');
         setAuthors('');
         setYear(new Date().getFullYear());
+        setCategory('');
         setTopic('');
         setNewTopic('');
         setIsNewTopic(false);
@@ -73,6 +76,18 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
                             onChange={(e) => setAuthors(e.target.value)}
                             className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             placeholder="Author A, Author B"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category (Macro Topic)</label>
+                        <input
+                            type="text"
+                            required
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            placeholder="e.g. AI, Systems, Theory"
                         />
                     </div>
 
