@@ -82,7 +82,18 @@ const MindMapCanvas = () => {
     // --- Actions ---
 
     const handleExport = () => {
-        const dataStr = JSON.stringify(mindMapData, null, 2);
+        // Merge current node positions into the data
+        const updatedPapers = mindMapData.papers.map(paper => {
+            const node = nodes.find(n => n.id === paper.id);
+            if (node) {
+                return { ...paper, position: node.position };
+            }
+            return paper;
+        });
+
+        const dataToSave = { ...mindMapData, papers: updatedPapers };
+
+        const dataStr = JSON.stringify(dataToSave, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');

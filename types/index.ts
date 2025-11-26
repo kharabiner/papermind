@@ -10,6 +10,7 @@ export interface Paper {
   topic: Topic;
   abstract?: string;
   url?: string;
+  position?: { x: number; y: number };
 }
 
 export interface Citation {

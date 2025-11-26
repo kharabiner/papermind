@@ -27,22 +27,30 @@ export function calculateLayout(data: MindMapData) {
         if (topicIndex === -1) return;
 
         // Basic Grid Position
-        // X is based on year relative to min year (Time on X-axis)
-        const minYear = Math.min(...data.papers.map(p => p.year));
-        let x = START_X + (paper.year - minYear) * COLUMN_WIDTH;
+        let x = 0;
+        let y = 0;
 
-        // Y is based on Topic Index (Topics on Y-axis)
-        let y = START_Y + topicIndex * ROW_HEIGHT;
+        if (paper.position) {
+            x = paper.position.x;
+            y = paper.position.y;
+        } else {
+            // X is based on year relative to min year (Time on X-axis)
+            const minYear = Math.min(...data.papers.map(p => p.year));
+            x = START_X + (paper.year - minYear) * COLUMN_WIDTH;
 
-        // Handle overlaps within the same cell
-        const key = `${paper.topic}-${paper.year}`;
-        const peers = groupedPapers.get(key) || [];
-        const indexInGroup = peers.findIndex(p => p.id === paper.id);
+            // Y is based on Topic Index (Topics on Y-axis)
+            y = START_Y + topicIndex * ROW_HEIGHT;
 
-        // Offset peers slightly so they don't perfectly overlap
-        if (peers.length > 1) {
-            x += (indexInGroup * 20) - ((peers.length - 1) * 10);
-            y += (indexInGroup * 20) - ((peers.length - 1) * 10);
+            // Handle overlaps within the same cell
+            const key = `${paper.topic}-${paper.year}`;
+            const peers = groupedPapers.get(key) || [];
+            const indexInGroup = peers.findIndex(p => p.id === paper.id);
+
+            // Offset peers slightly so they don't perfectly overlap
+            if (peers.length > 1) {
+                x += (indexInGroup * 20) - ((peers.length - 1) * 10);
+                y += (indexInGroup * 20) - ((peers.length - 1) * 10);
+            }
         }
 
         nodes.push({
