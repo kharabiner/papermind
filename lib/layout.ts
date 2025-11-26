@@ -4,16 +4,15 @@ import { MindMapData, Paper, Topic } from '@/types';
 const COLUMN_WIDTH = 400;
 const ROW_HEIGHT = 200;
 const START_X = 100;
-const START_Y = 100;
-
 export const calculateLayout = (data: MindMapData) => {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
-    const START_X = 200; // Shift right to make space for categories
+    const CATEGORY_WIDTH = 150;
+    const PAPER_START_X = CATEGORY_WIDTH + 50; // Reduced gap
     const START_Y = 50;
-    const COLUMN_WIDTH = 300;
-    const ROW_HEIGHT = 150;
+    const COLUMN_WIDTH = 300; // Reduced width (Node is ~260px)
+    const ROW_HEIGHT = 280;
 
     // Group papers by Category -> Topic
     const categoryGroups = new Map<string, Map<string, Paper[]>>();
@@ -33,7 +32,7 @@ export const calculateLayout = (data: MindMapData) => {
     // Calculate positions
     let currentY = START_Y;
 
-    // Sort categories (optional: alphabetical or custom order)
+    // Sort categories
     const sortedCategories = Array.from(categoryGroups.keys()).sort();
 
     sortedCategories.forEach(category => {
@@ -44,14 +43,16 @@ export const calculateLayout = (data: MindMapData) => {
 
         sortedTopics.forEach(topic => {
             const papers = topicMap.get(topic)!;
+            const topicStartY = currentY;
 
-            // Group papers by year within this topic to handle overlaps
+            // Group papers by year within this topic
             const papersByYear = new Map<number, Paper[]>();
             papers.forEach(p => {
                 if (!papersByYear.has(p.year)) papersByYear.set(p.year, []);
                 papersByYear.get(p.year)!.push(p);
             });
 
+            // Position Papers
             papers.forEach(paper => {
                 let x = 0;
                 let y = 0;
@@ -60,8 +61,11 @@ export const calculateLayout = (data: MindMapData) => {
                     x = paper.position.x;
                     y = paper.position.y;
                 } else {
-                    const minYear = Math.min(...data.papers.map(p => p.year));
-                    x = START_X + (paper.year - minYear) * COLUMN_WIDTH;
+                    // Calculate minYear for this specific topic to ensure papers start near the category
+                    const topicMinYear = Math.min(...papers.map(p => p.year));
+
+                    // X position based on year, relative to the topic's start year
+                    x = PAPER_START_X + (paper.year - topicMinYear) * COLUMN_WIDTH;
                     y = currentY;
 
                     // Handle overlaps
@@ -81,26 +85,34 @@ export const calculateLayout = (data: MindMapData) => {
                 });
             });
 
-            currentY += ROW_HEIGHT;
+            currentY += ROW_HEIGHT; // Move down for next row of papers
         });
 
         // Add Category Node
-        const categoryHeight = currentY - categoryStartY - 20; // -20 for spacing
+        // Add Category Node
+        // Calculate center based on the number of topics to align with the visual center of papers
+        // Papers are positioned at the top of their ROW_HEIGHT slot.
+        // So we want to center the category relative to the *starts* of the rows, not the full height.
+        const numTopics = sortedTopics.length;
+        // Align with the middle of the paper rows, adding offset for paper height (approx 120px -> center 60px)
+        const categoryCenterY = categoryStartY + ((numTopics - 1) * ROW_HEIGHT) / 2 + 60;
+
         nodes.push({
             id: `cat-${category}`,
             type: 'category',
-            position: { x: 0, y: categoryStartY },
+            // x: 75 to center in 150px column, y: center of paper rows
+            position: { x: 75, y: categoryCenterY },
             data: { label: category },
-            style: { height: categoryHeight },
-            draggable: false,
+            draggable: true,
             selectable: false,
-            zIndex: -1,
+            zIndex: 10,
+            origin: [0.5, 0.5], // Center origin to handle variable height (text wrapping)
         });
 
         currentY += 50; // Extra spacing between categories
     });
 
-    // Create Edges
+    // Create Citation Edges (Paper -> Paper)
     data.citations.forEach(citation => {
         nodes.some(n => n.id === citation.sourcePaperId) &&
             nodes.some(n => n.id === citation.targetPaperId) &&
@@ -110,7 +122,7 @@ export const calculateLayout = (data: MindMapData) => {
                 target: citation.targetPaperId,
                 type: 'smoothstep',
                 animated: true,
-                style: { stroke: '#cbd5e1', strokeWidth: 1 },
+                style: { stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '5,5' }, // Dashed for citations to distinguish
             });
     });
 

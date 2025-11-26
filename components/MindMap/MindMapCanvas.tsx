@@ -7,6 +7,7 @@ import { Download, Upload, Plus, FileJson } from 'lucide-react';
 
 import PaperNode from './PaperNode';
 import CategoryNode from './CategoryNode';
+import TopicNode from './TopicNode';
 import AddPaperModal from './AddPaperModal';
 import { generateMockData } from '@/lib/mock-data';
 import { calculateLayout } from '@/lib/layout';
@@ -15,6 +16,7 @@ import { MindMapData, Paper, Topic } from '@/types';
 const nodeTypes = {
     paper: PaperNode,
     category: CategoryNode,
+    topic: TopicNode,
 };
 
 const MindMapCanvas = () => {
@@ -22,9 +24,21 @@ const MindMapCanvas = () => {
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
+    // Ref to track current nodes for event handlers without creating dependencies
+    const nodesRef = React.useRef(nodes);
+    useEffect(() => {
+        nodesRef.current = nodes;
+    }, [nodes]);
+
     // App State
     const [mindMapData, setMindMapData] = useState<MindMapData>({ papers: [], citations: [], topics: [] });
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+    // Ref to store the last known Y of each category for drag deltas
+    const categoryYRefs = React.useRef<Record<string, number>>({});
+
+
 
     // Initial Data Load
     useEffect(() => {
@@ -83,13 +97,25 @@ const MindMapCanvas = () => {
 
     const handleResetPosition = useCallback((id: string) => {
         setMindMapData(prev => {
-            const updatedPapers = prev.papers.map(p => {
+            // First, sync current positions from the 'nodes' state to 'mindMapData'
+            // This ensures that other dragged nodes don't lose their positions when we re-calculate layout
+            const papersWithCurrentPositions = prev.papers.map(p => {
+                const currentNode = nodesRef.current.find(n => n.id === p.id);
+                if (currentNode && currentNode.position) {
+                    return { ...p, position: currentNode.position };
+                }
+                return p;
+            });
+
+            // Now reset the specific paper
+            const updatedPapers = papersWithCurrentPositions.map(p => {
                 if (p.id === id) {
-                    const { position, ...rest } = p;
+                    const { position, ...rest } = p; // Remove position to trigger auto-layout
                     return rest;
                 }
                 return p;
             });
+
             return { ...prev, papers: updatedPapers };
         });
     }, []);
@@ -103,19 +129,62 @@ const MindMapCanvas = () => {
         }
         const layout = calculateLayout(mindMapData);
 
-        // Inject handlers into node data
-        const nodesWithHandler = layout.nodes.map(node => ({
+        // Inject handlers
+        const initializedNodes = layout.nodes.map(node => ({
             ...node,
             data: {
                 ...node.data,
                 onDelete: handleDeletePaper,
-                onResetPosition: handleResetPosition
+                onResetPosition: handleResetPosition,
+                // Apply initial highlighting if needed (though usually null on load)
+                isSelected: false,
+                dimmed: false
             }
         }));
 
-        setNodes(nodesWithHandler);
+        setNodes(initializedNodes);
         setEdges(layout.edges);
+
+        // Initialize refs for drag
+        const refs: Record<string, number> = {};
+        initializedNodes.forEach(n => {
+            if (n.type === 'category') {
+                refs[n.data.label as string] = n.position.y;
+            }
+        });
+        categoryYRefs.current = refs;
+
     }, [mindMapData, setNodes, setEdges, handleDeletePaper, handleResetPosition]);
+
+    // Apply Highlighting when selection changes (Preserve Positions)
+    useEffect(() => {
+        setNodes((nds) => nds.map(node => {
+            const baseNode = { ...node };
+
+            if (!selectedCategory) {
+                return {
+                    ...baseNode,
+                    data: { ...baseNode.data, isSelected: false, dimmed: false }
+                };
+            }
+
+            const isCategoryNode = node.type === 'category';
+            const isPaperNode = node.type === 'paper';
+
+            // If it's the selected category node
+            if (isCategoryNode && node.data.label === selectedCategory) {
+                return { ...baseNode, data: { ...baseNode.data, isSelected: true, dimmed: false } };
+            }
+
+            // If it's a paper belonging to the selected category
+            if (isPaperNode && node.data.category === selectedCategory) {
+                return { ...baseNode, data: { ...baseNode.data, dimmed: false } };
+            }
+
+            // Otherwise dim it
+            return { ...baseNode, data: { ...baseNode.data, isSelected: false, dimmed: true } };
+        }));
+    }, [selectedCategory, setNodes]);
 
     // Update edge styles when selection changes
     useEffect(() => {
@@ -150,13 +219,67 @@ const MindMapCanvas = () => {
         );
     }, [selectedNodeId, setEdges, setNodes]);
 
-    const onNodeClick = (_: React.MouseEvent, node: { id: string }) => {
-        setSelectedNodeId(node.id === selectedNodeId ? null : node.id);
-    };
+    const onNodeDrag = useCallback((_: React.MouseEvent, node: Node) => {
+        if (node.type === 'category') {
+            const categoryLabel = node.data.label as string;
+            const newY = node.position.y;
 
-    const onPaneClick = () => {
+            // Get the last known Y from ref, or default to current if missing
+            // We must ensure we have a valid 'old' position to calculate delta
+            const oldY = categoryYRefs.current[categoryLabel];
+
+            // If we don't have a record, we can't calculate delta properly on first drag frame.
+            // But we initialized it in useEffect.
+
+            if (oldY !== undefined) {
+                const deltaY = newY - oldY;
+
+                if (deltaY !== 0) {
+                    setNodes((nds) => nds.map((n) => {
+                        // If it's the dragged category, we MUST return the 'node' passed in the callback
+                        // because it contains the updated position from the drag event.
+                        // If we return 'n' (from state), it might be stale or cause jitter.
+                        if (n.id === node.id) {
+                            return node;
+                        }
+
+                        // Move papers in this category
+                        if (n.type === 'paper' && n.data.category === categoryLabel) {
+                            return {
+                                ...n,
+                                position: {
+                                    ...n.position,
+                                    y: n.position.y + deltaY
+                                }
+                            };
+                        }
+                        return n;
+                    }));
+
+                    // Update ref to new position
+                    categoryYRefs.current[categoryLabel] = newY;
+                }
+            } else {
+                // Should not happen if initialized, but just in case, set it
+                categoryYRefs.current[categoryLabel] = newY;
+            }
+        }
+    }, []);
+
+    const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+        if (node.type === 'category') {
+            const category = node.data.label as string;
+            setSelectedCategory(prev => prev === category ? null : category);
+            setSelectedNodeId(null); // Clear paper selection when category is clicked
+        } else {
+            setSelectedNodeId(node.id === selectedNodeId ? null : node.id);
+        }
+    }, [selectedNodeId]);
+
+    const onPaneClick = useCallback(() => {
         setSelectedNodeId(null);
-    };
+        setSelectedCategory(null);
+    }, []);
 
     // --- Actions ---
 
@@ -234,8 +357,10 @@ const MindMapCanvas = () => {
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onNodeClick={onNodeClick}
+                onNodeDrag={onNodeDrag}
                 onPaneClick={onPaneClick}
                 nodeTypes={nodeTypes}
+
                 fitView
                 minZoom={0.1}
                 maxZoom={4}

@@ -1,17 +1,26 @@
 
 import React, { memo } from 'react';
-import { Handle, Position, NodeProps } from '@xyflow/react';
+import { Handle, Position, NodeProps, Node } from '@xyflow/react';
 import { Paper } from '@/types';
 import { FileText, Calendar, User, Trash2, RefreshCw } from 'lucide-react';
 
+type PaperNodeData = Paper & {
+    onDelete?: (id: string) => void;
+    onResetPosition?: (id: string) => void;
+    dimmed?: boolean;
+    [key: string]: unknown;
+};
+
 // We use NodeProps without generic to satisfy React Flow's nodeTypes requirement
 // and cast data inside the component
-const PaperNode = ({ id, data }: NodeProps) => {
-    const paper = data as unknown as Paper;
-    const onDelete = data.onDelete as (id: string) => void;
+const PaperNode = ({ data, id }: NodeProps<Node<PaperNodeData>>) => {
+    const paper = data;
+    const onDelete = data.onDelete;
+    const onResetPosition = data.onResetPosition;
+    const dimmed = data.dimmed;
 
     return (
-        <div className="group w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg border-2 border-slate-200 dark:border-slate-700 hover:border-blue-500 transition-colors overflow-hidden relative">
+        <div className={`group w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg border-2 border-slate-200 dark:border-slate-700 hover:border-blue-500 transition-colors overflow-hidden relative ${dimmed ? 'opacity-20 grayscale' : 'opacity-100'}`}>
             {/* Handles for connections */}
             <Handle type="target" position={Position.Top} className="!bg-slate-400" />
             <Handle type="source" position={Position.Bottom} className="!bg-slate-400" />
