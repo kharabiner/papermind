@@ -94,24 +94,42 @@ export const calculateLayout = (data: MindMapData) => {
         });
 
         // Add Category Node
-        // Add Category Node
-        // Calculate center based on the number of topics to align with the visual center of papers
-        // Papers are positioned at the top of their ROW_HEIGHT slot.
-        // So we want to center the category relative to the *starts* of the rows, not the full height.
-        const numTopics = sortedTopics.length;
-        // Align with the middle of the paper rows, adding offset for paper height (approx 120px -> center 60px)
-        const categoryCenterY = categoryStartY + ((numTopics - 1) * ROW_HEIGHT) / 2 + 60;
+        // Calculate center based on the ACTUAL positions of the papers we just added.
+        // This ensures that if papers have custom positions (loaded from storage), the category aligns with them.
+
+        let minPaperY = Infinity;
+        let maxPaperY = -Infinity;
+        let hasPapers = false;
+
+        nodes.forEach(node => {
+            if (node.type === 'paper' && (node.data.categories as string[])?.[0] === category) {
+                hasPapers = true;
+                const y = node.position.y;
+                const h = 200; // Increased fallback height
+                if (y < minPaperY) minPaperY = y;
+                if (y + h > maxPaperY) maxPaperY = y + h;
+            }
+        });
+
+        let categoryY = 0;
+        if (hasPapers) {
+            const categoryHeight = 40;
+            // Added +20px visual offset
+            categoryY = (minPaperY + maxPaperY) / 2 - (categoryHeight / 2) + 20;
+        } else {
+            // Fallback if no papers (shouldn't happen with current logic)
+            categoryY = categoryStartY;
+        }
 
         nodes.push({
             id: `cat-${category}`,
             type: 'category',
-            // x: 75 to center in 150px column, y: center of paper rows
-            position: { x: 75, y: categoryCenterY },
+            position: { x: 75, y: categoryY },
             data: { label: category },
             draggable: true,
             selectable: false,
             zIndex: 10,
-            origin: [0.5, 0.5], // Center origin to handle variable height (text wrapping)
+            origin: [0.5, 0.5],
         });
 
         currentY += 50; // Extra spacing between categories

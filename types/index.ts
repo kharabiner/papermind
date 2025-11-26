@@ -12,6 +12,7 @@ export interface Paper {
   categories: string[]; // e.g. ["AI", "Systems"] - First one is primary for layout
   abstract?: string;
   url?: string;
+  status?: 'read' | 'toread' | 'authored';
   position?: { x: number; y: number };
 }
 

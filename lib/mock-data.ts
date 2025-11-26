@@ -14,6 +14,7 @@ export function generateMockData(): MindMapData {
             categories: ['Artificial Intelligence', 'Deep Learning'],
             abstract: 'The Transformer architecture.',
             url: 'https://arxiv.org/abs/1706.03762',
+            status: 'read',
         },
         {
             id: 'p2',
@@ -24,6 +25,7 @@ export function generateMockData(): MindMapData {
             topic: 'Artificial Intelligence',
             categories: ['Artificial Intelligence', 'NLP'],
             abstract: 'Bidirectional training of Transformer.',
+            status: 'toread',
         },
         {
             id: 'p3',

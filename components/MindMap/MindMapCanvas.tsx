@@ -153,8 +153,72 @@ const MindMapCanvas = () => {
             }
         });
         categoryYRefs.current = refs;
-
     }, [mindMapData, setNodes, setEdges, handleDeletePaper, handleResetPosition]);
+
+    // Auto-center categories when node measurements are available (Post-render adjustment)
+    useEffect(() => {
+        // We only want to run this if we have nodes and they have measurements
+        const hasMeasurements = nodes.some(n => n.measured?.height);
+        if (!hasMeasurements) return;
+
+        setNodes(currentNodes => {
+            let hasChanges = false;
+            const newNodes = [...currentNodes];
+
+            // Group papers by category
+            const categoryPapers = new Map<string, Node[]>();
+            currentNodes.forEach(n => {
+                if (n.type === 'paper') {
+                    const cat = (n.data.categories as string[])?.[0];
+                    if (cat) {
+                        if (!categoryPapers.has(cat)) categoryPapers.set(cat, []);
+                        categoryPapers.get(cat)!.push(n);
+                    }
+                }
+            });
+
+            // Check each category
+            currentNodes.forEach((node, index) => {
+                if (node.type === 'category') {
+                    const categoryLabel = node.data.label as string;
+                    const papers = categoryPapers.get(categoryLabel);
+
+                    if (papers && papers.length > 0) {
+                        let minTop = Infinity;
+                        let maxBottom = -Infinity;
+                        let allMeasured = true;
+
+                        papers.forEach(p => {
+                            if (!p.measured?.height) {
+                                allMeasured = false;
+                                return;
+                            }
+                            if (p.position.y < minTop) minTop = p.position.y;
+                            if (p.position.y + p.measured.height > maxBottom) maxBottom = p.position.y + p.measured.height;
+                        });
+
+                        if (allMeasured) {
+                            const categoryHeight = node.measured?.height || 40;
+                            // Exact center calculation with visual offset
+                            const targetY = (minTop + maxBottom) / 2 - (categoryHeight / 2) + 20;
+
+                            // Only update if difference is significant (prevent float jitter loop)
+                            if (Math.abs(node.position.y - targetY) > 1) {
+                                newNodes[index] = {
+                                    ...node,
+                                    position: { ...node.position, y: targetY }
+                                };
+                                categoryYRefs.current[categoryLabel] = targetY; // Sync ref
+                                hasChanges = true;
+                            }
+                        }
+                    }
+                }
+            });
+
+            return hasChanges ? newNodes : currentNodes;
+        });
+    }, [nodes.length, nodes.map(n => n.measured?.height).join(',')]); // Dependency on measurements changing
 
     // Apply Highlighting when selection changes (Preserve Positions)
     useEffect(() => {
@@ -220,55 +284,85 @@ const MindMapCanvas = () => {
     }, [selectedNodeId, setEdges, setNodes]);
 
     const onNodeDrag = useCallback((_: React.MouseEvent, node: Node) => {
+        // 1. If Category is dragged -> Move its papers (Existing Logic)
         if (node.type === 'category') {
             const categoryLabel = node.data.label as string;
             const newY = node.position.y;
-
-            // Get the last known Y from ref, or default to current if missing
-            // We must ensure we have a valid 'old' position to calculate delta
             const oldY = categoryYRefs.current[categoryLabel];
-
-            // If we don't have a record, we can't calculate delta properly on first drag frame.
-            // But we initialized it in useEffect.
 
             if (oldY !== undefined) {
                 const deltaY = newY - oldY;
-
                 if (deltaY !== 0) {
                     setNodes((nds) => nds.map((n) => {
-                        // If it's the dragged category, we MUST return the 'node' passed in the callback
-                        // because it contains the updated position from the drag event.
-                        // If we return 'n' (from state), it might be stale or cause jitter.
-                        if (n.id === node.id) {
-                            return node;
-                        }
-
-                        // Move papers in this category (Primary or Secondary)
-                        // Note: If a paper belongs to multiple categories, dragging ANY of them will move the paper.
-                        // This might be desired or not. If we only want PRIMARY category to move it, check categories[0].
-                        // User said: "One paper, one card". If I drag "AI" and paper is "AI, Neuro", it should move.
-                        // If I drag "Neuro" and paper is "AI, Neuro" (but visually in AI row), should it move?
-                        // If it moves, it might detach from its visual row.
-                        // So we should ONLY move it if the dragged category is its PRIMARY category (visual row).
+                        if (n.id === node.id) return node;
                         if (n.type === 'paper' && (n.data.categories as string[])?.[0] === categoryLabel) {
-                            return {
-                                ...n,
-                                position: {
-                                    ...n.position,
-                                    y: n.position.y + deltaY
-                                }
-                            };
+                            return { ...n, position: { ...n.position, y: n.position.y + deltaY } };
                         }
                         return n;
                     }));
-
-                    // Update ref to new position
                     categoryYRefs.current[categoryLabel] = newY;
                 }
             } else {
-                // Should not happen if initialized, but just in case, set it
                 categoryYRefs.current[categoryLabel] = newY;
             }
+        }
+        // 2. If Paper is dragged -> Recenter its Category (New Logic)
+        else if (node.type === 'paper') {
+            const primaryCategory = (node.data.categories as string[])?.[0];
+            if (!primaryCategory) return;
+
+            // We need to find all papers in this category to calculate the new center.
+            // Note: 'nodes' state might not have the *current* position of the dragged node yet
+            // because onNodeDrag fires *during* drag. The 'node' arg has the current position.
+
+            // However, doing this on EVERY drag event might be expensive.
+            // But for smooth visual feedback, we try it.
+
+            setNodes((nds) => {
+                // Get all papers in this category
+                const categoryPapers = nds.filter(n =>
+                    n.type === 'paper' &&
+                    (n.data.categories as string[])?.[0] === primaryCategory &&
+                    n.id !== node.id // Exclude the dragged node from state (use 'node' instead)
+                );
+
+                // Add the dragged node with its NEW position
+                const allPapers = [...categoryPapers, node];
+
+                if (allPapers.length === 0) return nds;
+
+                // Calculate min/max Y considering height
+                let minTop = Infinity;
+                let maxBottom = -Infinity;
+
+                allPapers.forEach(p => {
+                    const h = p.measured?.height || 200; // Increased fallback height to 200px
+                    if (p.position.y < minTop) minTop = p.position.y;
+                    if (p.position.y + h > maxBottom) maxBottom = p.position.y + h;
+                });
+
+                // Center of the bounding box
+                const boundingBoxCenterY = (minTop + maxBottom) / 2;
+
+                // We want the CENTER of the category node to be at boundingBoxCenterY.
+                // Category node height is approx 40px.
+                // So position.y (top-left) should be boundingBoxCenterY - (CategoryHeight / 2)
+                const categoryHeight = 40;
+                // Added +20px visual offset - User preferred
+                const targetY = boundingBoxCenterY - (categoryHeight / 2) + 20;
+
+                return nds.map(n => {
+                    // Update the dragged paper's position in state
+                    if (n.id === node.id) return node;
+
+                    // Update Category position
+                    if (n.type === 'category' && n.data.label === primaryCategory) {
+                        categoryYRefs.current[primaryCategory] = targetY;
+                        return { ...n, position: { ...n.position, y: targetY } };
+                    }
+                    return n;
+                });
+            });
         }
     }, []);
 

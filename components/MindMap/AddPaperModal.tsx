@@ -18,6 +18,7 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
     const [topic, setTopic] = useState('');
     const [newTopic, setNewTopic] = useState('');
     const [url, setUrl] = useState('');
+    const [status, setStatus] = useState<'' | 'read' | 'toread' | 'authored'>('');
     const [isNewTopic, setIsNewTopic] = useState(false);
 
     if (!isOpen) return null;
@@ -36,6 +37,7 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
             topic: finalTopic,
             categories: category.split(',').map(c => c.trim()).filter(c => c),
             url: url,
+            status: status || undefined,
         });
 
         // Reset form
@@ -47,6 +49,7 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
         setTopic('');
         setNewTopic('');
         setUrl('');
+        setStatus('');
         setIsNewTopic(false);
         onClose();
     };
@@ -178,6 +181,56 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
                         />
                     </div>
 
+                    <div className="mt-4">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
+                        <div className="flex gap-4">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="status"
+                                    value=""
+                                    checked={status === ''}
+                                    onChange={() => setStatus('')}
+                                    className="text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-slate-700 dark:text-slate-300">None</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="status"
+                                    value="toread"
+                                    checked={status === 'toread'}
+                                    onChange={() => setStatus('toread')}
+                                    className="text-yellow-500 focus:ring-yellow-500"
+                                />
+                                <span className="text-sm text-slate-700 dark:text-slate-300">To Read</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="status"
+                                    value="read"
+                                    checked={status === 'read'}
+                                    onChange={() => setStatus('read')}
+                                    className="text-green-600 focus:ring-green-500"
+                                />
+                                <span className="text-sm text-slate-700 dark:text-slate-300">Read</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="status"
+                                    value="authored"
+                                    checked={status === 'authored'}
+                                    onChange={() => setStatus('authored')}
+                                    className="text-purple-600 focus:ring-purple-500"
+                                />
+                                <span className="text-sm text-slate-700 dark:text-slate-300">Authored</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div className="pt-4 flex justify-end gap-2">
                         <button
                             type="button"
@@ -194,8 +247,8 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

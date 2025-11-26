@@ -19,8 +19,17 @@ const PaperNode = ({ data, id }: NodeProps<Node<PaperNodeData>>) => {
     const onResetPosition = data.onResetPosition;
     const dimmed = data.dimmed;
 
+    const getStatusColor = () => {
+        switch (paper.status) {
+            case 'read': return 'border-l-green-500';
+            case 'toread': return 'border-l-yellow-400';
+            case 'authored': return 'border-l-purple-500';
+            default: return 'border-l-transparent';
+        }
+    };
+
     return (
-        <div className={`group w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg border-2 border-slate-200 dark:border-slate-700 hover:border-blue-500 transition-colors overflow-hidden relative ${dimmed ? 'opacity-20 grayscale' : 'opacity-100'}`}>
+        <div className={`group w-64 bg-white rounded-lg border border-slate-200 border-l-4 ${getStatusColor()} p-4 hover:border-blue-400 transition-all shadow-sm ${dimmed ? 'opacity-20 grayscale' : 'opacity-100'}`}>
             {/* Handles for connections */}
             <Handle type="target" position={Position.Top} className="!bg-slate-400" />
             <Handle type="source" position={Position.Bottom} className="!bg-slate-400" />
@@ -33,7 +42,7 @@ const PaperNode = ({ data, id }: NodeProps<Node<PaperNodeData>>) => {
                             e.stopPropagation();
                             (data.onResetPosition as (id: string) => void)(id);
                         }}
-                        className="p-1.5 bg-white dark:bg-slate-800 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full shadow-sm border border-slate-200 dark:border-slate-700"
+                        className="p-1.5 bg-white text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-full shadow-sm border border-slate-200"
                         title="Reset Position"
                     >
                         <RefreshCw className="w-3.5 h-3.5" />
@@ -47,7 +56,7 @@ const PaperNode = ({ data, id }: NodeProps<Node<PaperNodeData>>) => {
                                 onDelete(id);
                             }
                         }}
-                        className="p-1.5 bg-white dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full shadow-sm border border-slate-200 dark:border-slate-700"
+                        className="p-1.5 bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full shadow-sm border border-slate-200"
                         title="Delete Paper"
                     >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -55,9 +64,9 @@ const PaperNode = ({ data, id }: NodeProps<Node<PaperNodeData>>) => {
                 )}
             </div>
 
-            {/* Header / Title */}
-            <div className="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 pr-8">
-                <div className="flex items-start gap-2">
+            <div className="space-y-3">
+                {/* Title & Icon */}
+                <div className="flex items-start gap-2 pr-6">
                     {paper.url ? (
                         <a
                             href={paper.url}
@@ -72,27 +81,27 @@ const PaperNode = ({ data, id }: NodeProps<Node<PaperNodeData>>) => {
                     ) : (
                         <FileText className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
                     )}
-                    <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100 leading-tight line-clamp-2">
+                    <h3 className="text-sm font-medium text-slate-900 leading-tight">
                         {paper.title}
                     </h3>
                 </div>
-            </div>
 
-            {/* Body / Metadata */}
-            <div className="p-3 space-y-2">
-                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                    <User className="w-3 h-3" />
-                    <span className="truncate">{paper.authors.join(', ')}</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
-                        <Calendar className="w-3 h-3" />
-                        <span>{paper.year}{paper.month ? `.${paper.month}` : ''}</span>
+                {/* Metadata */}
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <User className="w-3 h-3" />
+                        <span className="truncate">{paper.authors.join(', ')}</span>
                     </div>
-                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-                        {paper.topic}
-                    </span>
+
+                    <div className="flex items-end justify-between pt-2">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full shrink-0">
+                            <Calendar className="w-3 h-3" />
+                            <span>{paper.year}{paper.month ? `.${paper.month}` : ''}</span>
+                        </div>
+                        <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold text-right ml-2 leading-tight">
+                            {paper.topic}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
