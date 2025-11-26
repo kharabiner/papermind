@@ -1,3 +1,5 @@
+import { Node } from '@xyflow/react';
+
 export type Topic = string;
 
 export interface Paper {
@@ -22,3 +24,5 @@ export interface MindMapData {
   citations: Citation[];
   topics: Topic[];
 }
+
+export type AppNode = Node<Paper & Record<string, unknown>, 'paper'>;

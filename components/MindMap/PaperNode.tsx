@@ -3,10 +3,10 @@ import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Paper } from '@/types';
 import { FileText, Calendar, User } from 'lucide-react';
 
-// We need to extend NodeProps to include our specific data type
-type PaperNodeProps = NodeProps<Paper>;
-
-const PaperNode = ({ data }: PaperNodeProps) => {
+// We use NodeProps without generic to satisfy React Flow's nodeTypes requirement
+// and cast data inside the component
+const PaperNode = ({ data }: NodeProps) => {
+    const paper = data as unknown as Paper;
     return (
         <div className="w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg border-2 border-slate-200 dark:border-slate-700 hover:border-blue-500 transition-colors overflow-hidden">
             {/* Handles for connections */}
@@ -18,7 +18,7 @@ const PaperNode = ({ data }: PaperNodeProps) => {
                 <div className="flex items-start gap-2">
                     <FileText className="w-4 h-4 text-blue-500 mt-1 shrink-0" />
                     <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-tight line-clamp-2">
-                        {data.title}
+                        {paper.title}
                     </h3>
                 </div>
             </div>
@@ -27,16 +27,16 @@ const PaperNode = ({ data }: PaperNodeProps) => {
             <div className="p-3 space-y-2">
                 <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <User className="w-3 h-3" />
-                    <span className="truncate">{data.authors.join(', ')}</span>
+                    <span className="truncate">{paper.authors.join(', ')}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
                         <Calendar className="w-3 h-3" />
-                        <span>{data.year}</span>
+                        <span>{paper.year}</span>
                     </div>
                     <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-                        {data.topic}
+                        {paper.topic}
                     </span>
                 </div>
             </div>

@@ -27,11 +27,12 @@ export function calculateLayout(data: MindMapData) {
         if (topicIndex === -1) return;
 
         // Basic Grid Position
-        let x = START_X + topicIndex * COLUMN_WIDTH;
-        // Y is based on year relative to min year (or just raw year mapping)
-        // Let's find min year first or just assume a range
+        // X is based on year relative to min year (Time on X-axis)
         const minYear = Math.min(...data.papers.map(p => p.year));
-        let y = START_Y + (paper.year - minYear) * ROW_HEIGHT;
+        let x = START_X + (paper.year - minYear) * COLUMN_WIDTH;
+
+        // Y is based on Topic Index (Topics on Y-axis)
+        let y = START_Y + topicIndex * ROW_HEIGHT;
 
         // Handle overlaps within the same cell
         const key = `${paper.topic}-${paper.year}`;
@@ -39,7 +40,6 @@ export function calculateLayout(data: MindMapData) {
         const indexInGroup = peers.findIndex(p => p.id === paper.id);
 
         // Offset peers slightly so they don't perfectly overlap
-        // Or stack them vertically/horizontally
         if (peers.length > 1) {
             x += (indexInGroup * 20) - ((peers.length - 1) * 10);
             y += (indexInGroup * 20) - ((peers.length - 1) * 10);
