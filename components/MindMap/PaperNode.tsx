@@ -75,7 +75,7 @@ const PaperNode = ({ data, id }: NodeProps<Node<PaperNodeData>>) => {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
                         <Calendar className="w-3 h-3" />
-                        <span>{paper.year}</span>
+                        <span>{paper.year}{paper.month ? `.${paper.month}` : ''}</span>
                     </div>
                     <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
                         {paper.topic}

@@ -13,6 +13,7 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
     const [title, setTitle] = useState('');
     const [authors, setAuthors] = useState('');
     const [year, setYear] = useState(new Date().getFullYear());
+    const [month, setMonth] = useState<number | undefined>(undefined);
     const [category, setCategory] = useState('');
     const [topic, setTopic] = useState('');
     const [newTopic, setNewTopic] = useState('');
@@ -30,6 +31,7 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
             title,
             authors: authors.split(',').map(a => a.trim()).filter(a => a),
             year: Number(year),
+            month: month,
             topic: finalTopic,
             categories: category.split(',').map(c => c.trim()).filter(c => c),
         });
@@ -38,6 +40,7 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
         setTitle('');
         setAuthors('');
         setYear(new Date().getFullYear());
+        setMonth(undefined);
         setCategory('');
         setTopic('');
         setNewTopic('');
@@ -91,7 +94,7 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Year</label>
                             <input
@@ -100,6 +103,18 @@ const AddPaperModal = ({ isOpen, onClose, onAdd, existingTopics }: AddPaperModal
                                 value={year}
                                 onChange={(e) => setYear(Number(e.target.value))}
                                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Month</label>
+                            <input
+                                type="number"
+                                min="1"
+                                max="12"
+                                value={month || ''}
+                                onChange={(e) => setMonth(e.target.value ? Number(e.target.value) : undefined)}
+                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                placeholder="Optional"
                             />
                         </div>
 

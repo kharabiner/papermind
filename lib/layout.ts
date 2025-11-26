@@ -52,6 +52,11 @@ export const calculateLayout = (data: MindMapData) => {
                 papersByYear.get(p.year)!.push(p);
             });
 
+            // Sort papers within each year by month
+            papersByYear.forEach((yearPapers) => {
+                yearPapers.sort((a, b) => (a.month || 0) - (b.month || 0));
+            });
+
             // Position Papers
             papers.forEach(paper => {
                 let x = 0;
