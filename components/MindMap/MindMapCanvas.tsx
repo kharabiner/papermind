@@ -3,7 +3,7 @@
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { ReactFlow, Background, Controls, useNodesState, useEdgesState, BackgroundVariant, Node, Edge, Panel } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Download, Upload, Plus, FileJson } from 'lucide-react';
+import { Download, Upload, Plus, FileJson, Search, X } from 'lucide-react';
 
 import PaperNode from './PaperNode';
 import CategoryNode from './CategoryNode';
@@ -35,10 +35,12 @@ const MindMapCanvas = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
+    // Search State
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+
     // Ref to store the last known Y of each category for drag deltas
     const categoryYRefs = React.useRef<Record<string, number>>({});
-
-
 
     // Initial Data Load
     useEffect(() => {
@@ -59,19 +61,6 @@ const MindMapCanvas = () => {
     // Auto-save to LocalStorage
     useEffect(() => {
         if (mindMapData.papers.length > 0) {
-            // We also need to save current node positions if they differ from initial layout
-            // But mindMapData might not have the latest positions if we only update it on export.
-            // Let's sync positions to mindMapData before saving?
-            // Actually, for auto-save to work perfectly with drag, we should update mindMapData on node drag end.
-            // For now, let's just save the structure. Position persistence on drag might be too heavy if we update state on every drag.
-            // Let's rely on the user explicitly exporting for perfect position saving, OR
-            // we can update mindMapData periodically or on node drag stop.
-
-            // Simple approach: Save what we have. If user wants to save positions, they are saved when we merge them back.
-            // Wait, if we load from LS, we want positions.
-            // So we should merge positions into mindMapData whenever nodes change? No, that causes loop.
-
-            // Better: When saving to LS, merge current node positions.
             const updatedPapers = mindMapData.papers.map(paper => {
                 const node = nodes.find(n => n.id === paper.id);
                 return node ? { ...paper, position: node.position } : paper;
@@ -90,8 +79,7 @@ const MindMapCanvas = () => {
                 categoryPositions
             }));
         }
-    }, [mindMapData, nodes]); // Warning: nodes changes often on drag. Debouncing might be needed if performance is bad.
-    // For now, let's try. If it's too slow, we can optimize.
+    }, [mindMapData, nodes]);
 
     const handleDeletePaper = useCallback((id: string) => {
         setMindMapData(prev => {
@@ -108,8 +96,6 @@ const MindMapCanvas = () => {
 
     const handleResetPosition = useCallback((id: string) => {
         setMindMapData(prev => {
-            // First, sync current positions from the 'nodes' state to 'mindMapData'
-            // This ensures that other dragged nodes don't lose their positions when we re-calculate layout
             const papersWithCurrentPositions = prev.papers.map(p => {
                 const currentNode = nodesRef.current.find(n => n.id === p.id);
                 if (currentNode && currentNode.position) {
@@ -118,10 +104,9 @@ const MindMapCanvas = () => {
                 return p;
             });
 
-            // Now reset the specific paper
             const updatedPapers = papersWithCurrentPositions.map(p => {
                 if (p.id === id) {
-                    const { position, ...rest } = p; // Remove position to trigger auto-layout
+                    const { position, ...rest } = p;
                     return rest;
                 }
                 return p;
@@ -140,14 +125,12 @@ const MindMapCanvas = () => {
         }
         const layout = calculateLayout(mindMapData);
 
-        // Inject handlers
         const initializedNodes = layout.nodes.map(node => ({
             ...node,
             data: {
                 ...node.data,
                 onDelete: handleDeletePaper,
                 onResetPosition: handleResetPosition,
-                // Apply initial highlighting if needed (though usually null on load)
                 isSelected: false,
                 dimmed: false
             }
@@ -156,7 +139,6 @@ const MindMapCanvas = () => {
         setNodes(initializedNodes);
         setEdges(layout.edges);
 
-        // Initialize refs for drag
         const refs: Record<string, number> = {};
         initializedNodes.forEach(n => {
             if (n.type === 'category') {
@@ -168,7 +150,6 @@ const MindMapCanvas = () => {
 
     // Auto-center categories when node measurements are available (Post-render adjustment)
     useEffect(() => {
-        // We only want to run this if we have nodes and they have measurements
         const hasMeasurements = nodes.some(n => n.measured?.height);
         if (!hasMeasurements) return;
 
@@ -176,7 +157,6 @@ const MindMapCanvas = () => {
             let hasChanges = false;
             const newNodes = [...currentNodes];
 
-            // Group papers by category
             const categoryPapers = new Map<string, Node[]>();
             currentNodes.forEach(n => {
                 if (n.type === 'paper') {
@@ -188,7 +168,6 @@ const MindMapCanvas = () => {
                 }
             });
 
-            // Check each category
             currentNodes.forEach((node, index) => {
                 if (node.type === 'category') {
                     const categoryLabel = node.data.label as string;
@@ -210,16 +189,14 @@ const MindMapCanvas = () => {
 
                         if (allMeasured) {
                             const categoryHeight = node.measured?.height || 40;
-                            // Exact center calculation with visual offset
                             const targetY = (minTop + maxBottom) / 2 - (categoryHeight / 2) + 20;
 
-                            // Only update if difference is significant (prevent float jitter loop)
                             if (Math.abs(node.position.y - targetY) > 1) {
                                 newNodes[index] = {
                                     ...node,
                                     position: { ...node.position, y: targetY }
                                 };
-                                categoryYRefs.current[categoryLabel] = targetY; // Sync ref
+                                categoryYRefs.current[categoryLabel] = targetY;
                                 hasChanges = true;
                             }
                         }
@@ -229,13 +206,39 @@ const MindMapCanvas = () => {
 
             return hasChanges ? newNodes : currentNodes;
         });
-    }, [nodes.length, nodes.map(n => n.measured?.height).join(',')]); // Dependency on measurements changing
+    }, [nodes.length, nodes.map(n => n.measured?.height).join(',')]);
 
     // Apply Highlighting when selection changes (Preserve Positions)
     useEffect(() => {
         setNodes((nds) => nds.map(node => {
             const baseNode = { ...node };
 
+            // 1. Search Filtering (Highest Priority)
+            if (searchQuery.trim()) {
+                const query = searchQuery.toLowerCase();
+
+                if (node.type === 'category') {
+                    return { ...baseNode, data: { ...baseNode.data, isSelected: false, dimmed: false } };
+                }
+
+                if (node.type === 'paper') {
+                    const paper = node.data as unknown as Paper;
+                    const matchTitle = paper.title.toLowerCase().includes(query);
+                    const matchAuthors = paper.authors.some(a => a.toLowerCase().includes(query));
+                    const matchTopic = paper.topic.toLowerCase().includes(query);
+                    const matchCategory = paper.categories?.some(c => c.toLowerCase().includes(query));
+
+                    if (matchTitle || matchAuthors || matchTopic || matchCategory) {
+                        return { ...baseNode, data: { ...baseNode.data, dimmed: false } };
+                    } else {
+                        return { ...baseNode, data: { ...baseNode.data, dimmed: true } };
+                    }
+                }
+
+                return baseNode;
+            }
+
+            // 2. Category Selection (Existing Logic)
             if (!selectedCategory) {
                 return {
                     ...baseNode,
@@ -246,20 +249,17 @@ const MindMapCanvas = () => {
             const isCategoryNode = node.type === 'category';
             const isPaperNode = node.type === 'paper';
 
-            // If it's the selected category node
             if (isCategoryNode && node.data.label === selectedCategory) {
                 return { ...baseNode, data: { ...baseNode.data, isSelected: true, dimmed: false } };
             }
 
-            // If it's a paper belonging to the selected category (Primary or Secondary)
             if (isPaperNode && node.data.categories && (node.data.categories as string[]).includes(selectedCategory)) {
                 return { ...baseNode, data: { ...baseNode.data, dimmed: false } };
             }
 
-            // Otherwise dim it
             return { ...baseNode, data: { ...baseNode.data, isSelected: false, dimmed: true } };
         }));
-    }, [selectedCategory, setNodes]);
+    }, [selectedCategory, searchQuery, setNodes]);
 
     // Update edge styles when selection changes
     useEffect(() => {
@@ -295,7 +295,6 @@ const MindMapCanvas = () => {
     }, [selectedNodeId, setEdges, setNodes]);
 
     const onNodeDrag = useCallback((_: React.MouseEvent, node: Node) => {
-        // 1. If Category is dragged -> Move its papers (Existing Logic)
         if (node.type === 'category') {
             const categoryLabel = node.data.label as string;
             const newY = node.position.y;
@@ -317,56 +316,37 @@ const MindMapCanvas = () => {
                 categoryYRefs.current[categoryLabel] = newY;
             }
         }
-        // 2. If Paper is dragged -> Recenter its Category (New Logic)
         else if (node.type === 'paper') {
             const primaryCategory = (node.data.categories as string[])?.[0];
             if (!primaryCategory) return;
 
-            // We need to find all papers in this category to calculate the new center.
-            // Note: 'nodes' state might not have the *current* position of the dragged node yet
-            // because onNodeDrag fires *during* drag. The 'node' arg has the current position.
-
-            // However, doing this on EVERY drag event might be expensive.
-            // But for smooth visual feedback, we try it.
-
             setNodes((nds) => {
-                // Get all papers in this category
                 const categoryPapers = nds.filter(n =>
                     n.type === 'paper' &&
                     (n.data.categories as string[])?.[0] === primaryCategory &&
-                    n.id !== node.id // Exclude the dragged node from state (use 'node' instead)
+                    n.id !== node.id
                 );
 
-                // Add the dragged node with its NEW position
                 const allPapers = [...categoryPapers, node];
 
                 if (allPapers.length === 0) return nds;
 
-                // Calculate min/max Y considering height
                 let minTop = Infinity;
                 let maxBottom = -Infinity;
 
                 allPapers.forEach(p => {
-                    const h = p.measured?.height || 200; // Increased fallback height to 200px
+                    const h = p.measured?.height || 200;
                     if (p.position.y < minTop) minTop = p.position.y;
                     if (p.position.y + h > maxBottom) maxBottom = p.position.y + h;
                 });
 
-                // Center of the bounding box
                 const boundingBoxCenterY = (minTop + maxBottom) / 2;
-
-                // We want the CENTER of the category node to be at boundingBoxCenterY.
-                // Category node height is approx 40px.
-                // So position.y (top-left) should be boundingBoxCenterY - (CategoryHeight / 2)
                 const categoryHeight = 40;
-                // Added +20px visual offset - User preferred
                 const targetY = boundingBoxCenterY - (categoryHeight / 2) + 20;
 
                 return nds.map(n => {
-                    // Update the dragged paper's position in state
                     if (n.id === node.id) return node;
 
-                    // Update Category position
                     if (n.type === 'category' && n.data.label === primaryCategory) {
                         categoryYRefs.current[primaryCategory] = targetY;
                         return { ...n, position: { ...n.position, y: targetY } };
@@ -381,7 +361,7 @@ const MindMapCanvas = () => {
         if (node.type === 'category') {
             const category = node.data.label as string;
             setSelectedCategory(prev => prev === category ? null : category);
-            setSelectedNodeId(null); // Clear paper selection when category is clicked
+            setSelectedNodeId(null);
         } else {
             setSelectedNodeId(node.id === selectedNodeId ? null : node.id);
         }
@@ -392,10 +372,7 @@ const MindMapCanvas = () => {
         setSelectedCategory(null);
     }, []);
 
-    // --- Actions ---
-
     const handleExport = () => {
-        // Merge current node positions into the data
         const updatedPapers = mindMapData.papers.map(paper => {
             const node = nodes.find(n => n.id === paper.id);
             if (node) {
@@ -434,7 +411,6 @@ const MindMapCanvas = () => {
             try {
                 const content = e.target?.result as string;
                 const parsedData = JSON.parse(content) as MindMapData;
-                // Basic validation
                 if (Array.isArray(parsedData.papers) && Array.isArray(parsedData.topics)) {
                     setMindMapData(parsedData);
                 } else {
@@ -446,7 +422,6 @@ const MindMapCanvas = () => {
             }
         };
         reader.readAsText(file);
-        // Reset input
         event.target.value = '';
     };
 
@@ -491,7 +466,31 @@ const MindMapCanvas = () => {
                 <Background color="#94a3b8" gap={20} variant={BackgroundVariant.Dots} />
                 <Controls />
 
-                <Panel position="top-right" className="bg-white dark:bg-slate-900 p-2 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2">
+                <Panel position="top-right" className="bg-white dark:bg-slate-900 p-2 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 items-center">
+                    <div className={`flex items-center transition-all duration-300 overflow-hidden ${isSearchOpen ? 'w-64 mr-2' : 'w-0'}`}>
+                        <input
+                            type="text"
+                            placeholder="Search papers..."
+                            className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+
+                    <button
+                        onClick={() => {
+                            setIsSearchOpen(!isSearchOpen);
+                            if (isSearchOpen) setSearchQuery('');
+                        }}
+                        className={`p-2 rounded-md transition-colors ${isSearchOpen || searchQuery ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
+                        title="Search"
+                    >
+                        {isSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+                    </button>
+
+                    <div className="w-px bg-slate-200 dark:bg-slate-700 mx-1 h-6" />
+
                     <button
                         onClick={() => setIsModalOpen(true)}
                         className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
